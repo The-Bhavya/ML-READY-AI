@@ -1,3 +1,4 @@
+from fileinput import filename
 import os
 import io
 import pandas as pd
@@ -8,25 +9,98 @@ from modules.data_summary import get_summary
 from modules.eda import generate_visualizations
 
 app = Flask(__name__)
-app.secret_key = 'secretkey'  #secret key for session management
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False #to suppress a warning from SQLAlchemy
-db = SQLAlchemy(app) #initialize the database
+app.secret_key = 'mlreadyai_secret_2025' # needed for flash & session
 
-# Define User model
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100))
-    email = db.Column(db.String(100), unique=True)
-    password = db.Column(db.String(100))
+# Folder where uploaded files are stored temporarily
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024 # 50 MB limit
 
-# Database initialization with app context
-with app.app_context():
-    db.create_all()
+# In-memory store for the current DataFrame (simple global)
+# We use a dict so it can be updated from any route
+
+_store = {}
+def get_df() -> pd.DataFrame | None:
+    return _store.get('df')
+def set_df(df: pd.DataFrame):
+    _store['df'] = df  
+
+# # Define User model
+# class User(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     name = db.Column(db.String(100))
+#     email = db.Column(db.String(100), unique=True)
+#     password = db.Column(db.String(100))
+# # Database initialization with app context
+# with app.app_context():
+#     db.create_all()
+
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
     return render_template('home.html')
+
+
+@app.route('/upload', methods=['GET', 'POST'])
+def upload():
+    if request.method == 'POST':
+        # Check a file was included in the form
+        if 'dataset' not in request.files:
+            flash('No file part in the request.', 'error')
+            return redirect(url_for('upload'))
+
+        file = request.files['dataset']
+
+        # Check the user actually selected a file
+        if file.filename == '':
+            flash('Please select a file before uploading.', 'error')
+            return redirect(url_for('upload'))
+
+        # 3. Validate extension
+        if not allowed_file(file.filename):
+            flash('Unsupported file format. Please upload CSV, Excel, JSON, XML or HTML.', 'error')
+            return redirect(url_for('upload'))
+
+        # 4. Save the file safely
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+
+        # 5. Parse the file into a DataFrame (MODULE 3)
+        try:
+            df = load_dataframe(filepath)
+        except Exception as e:
+            flash(f'Could not read file: {e}', 'error')
+            return redirect(url_for('upload'))
+
+        set_df(df)
+        session['filename'] = filename
+        flash(f'"{filename}" uploaded successfully — {df.shape[0]} rows × {df.shape[1]} columns.', 'success')
+        return redirect(url_for('summary'))
+
+    return render_template('upload.html')
+
+@app.route('/summary')
+def summary():
+    df = get_df()
+    if df is None:
+        flash('Please upload a dataset first.', 'error')
+        return redirect(url_for('upload'))
+    summary_data = get_summary(df)
+    filename = session.get('filename', 'dataset')
+    return render_template('summary.html', summary=summary_data,filename=filename)
+
+
+@app.route('/eda')
+def eda():
+    df = get_df()
+    if df is None:
+        flash('Please upload a dataset first.', 'error')
+        return redirect(url_for('upload'))
+    plots = generate_visualizations(df)
+    filename = session.get('filename', 'dataset')
+    return render_template('eda.html', plots=plots, filename=filename)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
