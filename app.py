@@ -11,7 +11,6 @@ from modules.data_summary import get_summary
 from modules.eda import generate_visualizations
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
-
 from modules.feature_engineering import apply_label_encoding, get_feature_info
 
 app = Flask(__name__)
@@ -20,7 +19,6 @@ app.secret_key = 'mlreadyai_secret_2025' # needed for flash & session
 # SQLAlchemy configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
 # Initialize database
 db = SQLAlchemy(app)
 # Define User model
@@ -29,20 +27,17 @@ class User(db.Model):
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
-
 # Database initialization with app context
 with app.app_context():
     db.create_all()
+
 
 # Folder where uploaded files are stored temporarily
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024 # 50 MB limit
-
-# In-memory store for the current DataFrame (simple global)
 # We use a dict so it can be updated from any route
-
 _store = {}
 def get_df() -> pd.DataFrame | None:
     return _store.get('df')
