@@ -5,29 +5,38 @@ import joblib
 import pandas as pd
 from flask import (Flask, render_template, request,redirect, url_for, flash, session)
 from werkzeug.utils import secure_filename, send_from_directory
-from modules.cleaning import handle_missing_values, handle_outliers, remove_duplicates
+from modules.cleaning import handle_missing_values, handle_outliers, remove_duplicates, fix_inconsistencies, get_missing_stats, detect_outliers
 from modules.data_loader import load_dataframe, allowed_file
 from modules.data_summary import get_summary
 from modules.eda import generate_visualizations
+from modules.model_training import train_model_logic
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
-from modules.feature_engineering import apply_label_encoding, get_feature_info
+from modules.feature_engineering import apply_label_encoding, apply_standard_scaling, get_feature_info
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 
 app = Flask(__name__)
 app.secret_key = 'mlreadyai_secret_2025' # needed for flash & session
-
-# SQLAlchemy configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# Initialize database
 db = SQLAlchemy(app)
+
+# Initialize Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+# Use setattr to avoid static type-checker errors when assigning login_view
+setattr(login_manager, 'login_view', 'login')
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
 # Define User model
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
-# Database initialization with app context
 with app.app_context():
     db.create_all()
 
@@ -49,8 +58,8 @@ def set_df(df: pd.DataFrame):
 def home():
     return render_template('home.html')
 
-@app.route('/register', methods=['GET', 'POST'])
-def register():
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
     if request.method == 'POST':
         name = request.form['name']
         email = request.form['email']
@@ -60,24 +69,24 @@ def register():
         # validations 
         if not name or len(name.strip())<2:
             flash('Name must be at least 2 characters long.', 'error')
-            return redirect(url_for('register'))
+            return redirect(url_for('signup'))
 
         if not email or '@' not in email:
             flash('Invalid email address.', 'error')
-            return redirect(url_for('register'))
+            return redirect(url_for('signup'))
         
         # password must be 8 characters long and a combination of letters and numbers and special characters
         if len(password) < 8 or not any(char.isdigit() for char in password)\
             or not any(char.isalpha() for char in password) or not any (not char.isalnum() for char in password): 
 
             flash('Password must be at least 8 characters long and contain letters, numbers and special characters.', 'error')
-            return redirect(url_for('register'))
+            return redirect(url_for('signup'))
         
         #check if user already exists
         existing_user = User.query.filter_by(email=email).first()
         if existing_user:
             flash('Email already registered.Please log in.', 'error')
-            return redirect(url_for('register'))
+            return redirect(url_for('login'))
 
         # create new user
         hashed_password = generate_password_hash(password)
@@ -89,13 +98,13 @@ def register():
             db.session.add(new_user)
             db.session.commit()
             flash('Registration successful! Please log in.', 'success')
-            return redirect(url_for('register'))
+            return redirect(url_for('signup'))
         except Exception as e:
             db.session.rollback()
             flash('An error occurred during registration. Please try again.', 'error')
-            return redirect(url_for('register'))
+            return redirect(url_for('signup'))
 
-    return render_template('register.html')
+    return render_template('signup.html')
 
 @app.route('/login', methods=['GET','POST'])
 def login():
@@ -114,6 +123,7 @@ def login():
     return render_template('login.html')
 
 @app.route('/upload', methods=['GET', 'POST'])
+@login_required
 def upload():
     if request.method == 'POST':
         # Check a file was included in the form
