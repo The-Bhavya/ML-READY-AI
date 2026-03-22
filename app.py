@@ -22,7 +22,30 @@ from modules.model_training      import train_model_logic
 
 # ── App config ──────────────────────────────────────────────
 app = Flask(__name__)
-app.secret_key = 'mlreadyai_secret_2025'   # needed for flash & session
+app.secret_key = 'mlreadyai_secret_2025' # needed for flash & session
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+# Initialize Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+# Use setattr to avoid static type-checker errors when assigning login_view
+setattr(login_manager, 'login_view', 'login')
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+# Define User model
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+with app.app_context():
+    db.create_all()
+
 
 # Folder where uploaded files are stored temporarily
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
@@ -50,8 +73,80 @@ def set_df(df: pd.DataFrame):
 def home():
     return render_template('index.html')
 
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        password = request.form['password']
+        confirm_password = request.form['confirm_password']
 
-# ── MODULE 2 & 3 — Upload + Parse ───────────────────────────
+        # validations 
+        if not name or len(name.strip())<2:
+            flash('Name must be at least 2 characters long.', 'error')
+            return redirect(url_for('signup'))
+
+        if not email or '@' not in email:
+            flash('Invalid email address.', 'error')
+            return redirect(url_for('signup'))
+        
+        # password must be 8 characters long and a combination of letters and numbers and special characters
+        if len(password) < 8 or not any(char.isdigit() for char in password)\
+            or not any(char.isalpha() for char in password) or not any (not char.isalnum() for char in password): 
+
+            flash('Password must be at least 8 characters long and contain letters, numbers and special characters.', 'error')
+            return redirect(url_for('signup'))
+        
+        #check if user already exists
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            flash('Email already registered.Please log in.', 'error')
+            return redirect(url_for('login'))
+
+        # create new user
+        hashed_password = generate_password_hash(password)
+        new_user = User(name=name.strip(), 
+                        email=email.strip(),
+                        password=hashed_password
+        )
+        try: 
+            db.session.add(new_user)
+            db.session.commit()
+            flash('Registration successful! Please log in.', 'success')
+            return redirect(url_for('signup'))
+        except Exception as e:
+            db.session.rollback()
+            flash('An error occurred during registration. Please try again.', 'error')
+            return redirect(url_for('signup'))
+
+    return render_template('signup.html')
+
+@app.route('/login', methods=['GET','POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        user = User.query.filter_by(email=email).first()
+
+        if user and check_password_hash(user.password, password):
+            login_user(user)
+            session['user_id'] = user.id
+            session['user_name'] = user.name
+            flash('Login successful!','success')
+            return redirect(url_for('upload'))
+        else:
+            flash('Invalid email or password.', 'error')
+    return render_template('login.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    session.pop('user_id', None)
+    session.pop('user_name', None)
+    flash('Logged out successfully.', 'success')
+    return redirect(url_for('login'))
+
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
     """
