@@ -1,24 +1,20 @@
-# ============================================================
-# ML READY AI — Main Flask Application
-# Modules Completed: All (1-15)
-# ============================================================
-
 import os
 import io
 import pandas as pd
 import joblib
-from flask import (Flask, render_template, request,
-                   redirect, url_for, flash, session, send_from_directory, send_file)
+from flask import (Flask, render_template, request,redirect, url_for, flash, session, send_from_directory, send_file)
 from werkzeug.utils import secure_filename
-
-from modules.data_loader  import load_dataframe, allowed_file
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from modules.data_loader import load_dataframe, allowed_file
 from modules.data_summary import get_summary
-from modules.eda          import generate_visualizations
-from modules.cleaning     import (handle_missing_values, get_missing_stats, 
-                             detect_outliers, handle_outliers,
-                             remove_duplicates, fix_inconsistencies)
+from modules.eda import generate_visualizations
+from modules.cleaning import (handle_missing_values, get_missing_stats, detect_outliers, handle_outliers,remove_duplicates, fix_inconsistencies)
 from modules.feature_engineering import apply_label_encoding, apply_standard_scaling, get_feature_info
-from modules.model_training      import train_model_logic
+from modules.model_training import train_model_logic
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
+
+
 
 # ── App config ──────────────────────────────────────────────
 app = Flask(__name__)
@@ -71,7 +67,7 @@ def set_df(df: pd.DataFrame):
 # ── MODULE 1 — Home ─────────────────────────────────────────
 @app.route('/')
 def home():
-    return render_template('index.html')
+    return render_template('home.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -199,10 +195,10 @@ def upload():
 def summary():
     """
     Shows:
-      • Key metrics (rows, cols, missing cols, numeric cols)
-      • Per-column info table (name, dtype, missing count/pct)
-      • Descriptive statistics for numeric columns
-      • First 5 rows preview
+        • Key metrics (rows, cols, missing cols, numeric cols)
+        • Per-column info table (name, dtype, missing count/pct)
+        • Descriptive statistics for numeric columns
+        • First 5 rows preview
     """
     df = get_df()
     if df is None:
@@ -219,9 +215,9 @@ def summary():
 def eda():
     """
     Generates and displays:
-      • Histograms for numeric columns
-      • Bar charts for categorical columns
-      • Correlation Heatmap
+        • Histograms for numeric columns
+        • Bar charts for categorical columns
+        • Correlation Heatmap
     Uses Base64 encoding to embed plots directly in HTML.
     """
     df = get_df()
