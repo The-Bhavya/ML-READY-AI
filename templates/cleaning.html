@@ -177,10 +177,20 @@
         </div>
 
         <!-- NEXT STEPS -->
-        {% if not missing_stats and not outlier_stats and duplicate_count == 0 %}
-        <div class="card" style="border-left: 3px solid var(--accent2); margin-top: 30px;">
-            <h3 style="margin-bottom:14px">⚡ Data is Clean!</h3>
-            <p>Your dataset has no missing values. You can proceed to feature engineering or model training.</p>
+        {% if not missing_stats %}
+        <div class="card" style="border-left: 4px solid var(--accent); margin-top: 30px;">
+            <h3 style="margin-bottom:14px">⚡ Cleaning Checkpoint</h3>
+
+            {% if outlier_stats or duplicate_count > 0 %}
+            <p style="color: var(--text-muted); margin-bottom: 20px;">
+                ⚠️ Note: You still have some <strong style="color:var(--accent2)">outliers</strong> or <strong
+                    style="color:var(--accent2)">duplicates</strong>. While you can proceed, handling them is
+                recommended for better model accuracy.
+            </p>
+            {% else %}
+            <p>✨ Your dataset is looking great and fully cleaned!</p>
+            {% endif %}
+
             <div class="next-bar">
                 <a href="/feature_engineering" class="btn-primary" style="font-size:0.9rem; padding:11px 24px;">⚙️
                     Feature Engineering</a>
