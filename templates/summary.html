@@ -2,180 +2,653 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Summary — ML Ready AI</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Data Summary — MLReady AI</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Syne:wght@300;400;500&display=swap"
+        rel="stylesheet" />
     <style>
-        /* ── Summary-specific styles ── */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #04020a;
+            --bg2: #07040f;
+            --surface: #0e0a1a;
+            --surface2: #130f22;
+            --border: rgba(160, 80, 255, 0.15);
+            --accent: #a050ff;
+            --accent2: #cc88ff;
+            --violet: #7b2fff;
+            --pink: #e040ff;
+            --text: #ece8f5;
+            --muted: #6b5f85;
+            --success: #44ffaa;
+            --warn: #f5b042;
+            --error: #ff3c64;
+            --mono: 'Orbitron', monospace;
+            --sans: 'Syne', sans-serif;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--sans);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        #bg-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, 0.025) 2px, rgba(0, 0, 0, 0.025) 4px);
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* ── NAVBAR ── */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 6%;
+            height: 68px;
+            background: rgba(4, 2, 10, 0.88);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-logo {
+            font-family: var(--mono);
+            font-size: 0.9rem;
+            font-weight: 900;
+            color: var(--accent2);
+            letter-spacing: 0.08em;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-dot {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.6);
+                opacity: 0.4;
+            }
+        }
+
+        .nav-logo span {
+            color: var(--muted);
+            font-weight: 400;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            font-family: var(--mono);
+            font-size: 0.58rem;
+            color: var(--muted);
+            text-decoration: none;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            transition: color 0.2s;
+            position: relative;
+        }
+
+        .nav-links a::before {
+            content: '//';
+            margin-right: 4px;
+            color: var(--violet);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .nav-links a:hover,
+        .nav-links a.active {
+            color: var(--accent2);
+        }
+
+        .nav-links a:hover::before,
+        .nav-links a.active::before {
+            opacity: 1;
+        }
+
+        /* ── PAGE ── */
+        .page-container {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            max-width: 1100px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 100px 24px 60px;
+        }
+
+        @keyframes fade-up {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .page-title {
+            font-family: var(--mono);
+            font-size: 1.7rem;
+            font-weight: 900;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.01em;
+            opacity: 0;
+            transform: translateY(16px);
+            animation: fade-up 0.7s ease 0.1s forwards;
+        }
+
+        .page-subtitle {
+            font-size: 0.9rem;
+            color: var(--muted);
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: fade-up 0.7s ease 0.2s forwards;
+        }
+
+        /* ── FLASH ── */
+        .flash {
+            padding: 11px 15px;
+            border-radius: 4px;
+            font-family: var(--mono);
+            font-size: 0.62rem;
+            letter-spacing: 0.06em;
+            border-left: 2px solid;
+            margin-bottom: 1.2rem;
+            line-height: 1.6;
+        }
+
+        .flash.success {
+            background: rgba(68, 255, 170, 0.06);
+            border-color: var(--success);
+            color: #88ffcc;
+        }
+
+        .flash.error {
+            background: rgba(255, 60, 100, 0.07);
+            border-color: var(--error);
+            color: #ff8099;
+        }
+
+        .flash.danger {
+            background: rgba(255, 60, 100, 0.07);
+            border-color: var(--error);
+            color: #ff8099;
+        }
+
+        /* ── METRICS ROW ── */
         .metrics-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 18px;
-            margin-bottom: 32px;
+            gap: 16px;
+            margin-bottom: 28px;
         }
 
         .metric-card {
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: var(--radius);
+            border-radius: 8px;
             padding: 22px 18px;
             text-align: center;
-            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s, border-color 0.2s;
+            opacity: 0;
+            transform: translateY(16px);
+            animation: fade-up 0.6s ease forwards;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            transform: scaleX(0);
+            transition: transform 0.4s ease;
         }
 
         .metric-card:hover {
             transform: translateY(-3px);
-            box-shadow: var(--shadow);
+            border-color: rgba(160, 80, 255, 0.35);
+        }
+
+        .metric-card:hover::before {
+            transform: scaleX(1);
         }
 
         .metric-value {
+            font-family: var(--mono);
             font-size: 2rem;
-            font-weight: 800;
-            background: linear-gradient(90deg, var(--accent), var(--accent2));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            font-weight: 900;
+            color: var(--accent2);
+            letter-spacing: -0.02em;
+            display: block;
         }
 
         .metric-label {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            font-weight: 600;
+            font-family: var(--mono);
+            font-size: 0.56rem;
+            color: var(--muted);
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.1em;
             margin-top: 6px;
+            display: block;
         }
 
-        /* Missing value pill */
-        .pill-ok {
-            background: rgba(34, 197, 94, 0.15);
-            color: #86efac;
-            border: 1px solid #22c55e;
-            border-radius: 50px;
-            padding: 3px 10px;
-            font-size: 0.78rem;
+        .metric-card:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .metric-card:nth-child(2) {
+            animation-delay: 0.18s;
+        }
+
+        .metric-card:nth-child(3) {
+            animation-delay: 0.26s;
+        }
+
+        .metric-card:nth-child(4) {
+            animation-delay: 0.34s;
+        }
+
+        /* ── CARD ── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.8rem 2rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(16px);
+            animation: fade-up 0.6s ease forwards;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), var(--pink), transparent);
+        }
+
+        .card:nth-of-type(1) {
+            animation-delay: 0.2s;
+        }
+
+        .card:nth-of-type(2) {
+            animation-delay: 0.3s;
+        }
+
+        .card:nth-of-type(3) {
+            animation-delay: 0.4s;
+        }
+
+        .card:nth-of-type(4) {
+            animation-delay: 0.5s;
+        }
+
+        /* ── SEC HEADER ── */
+        .sec-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .sec-header h2 {
+            font-family: var(--mono);
+            font-size: 0.85rem;
             font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--text);
         }
 
-        .pill-warn {
-            background: rgba(234, 179, 8, 0.15);
-            color: #fde047;
-            border: 1px solid #eab308;
-            border-radius: 50px;
-            padding: 3px 10px;
-            font-size: 0.78rem;
-            font-weight: 700;
-        }
-
-        .pill-danger {
-            background: rgba(239, 68, 68, 0.15);
-            color: #fca5a5;
-            border: 1px solid #ef4444;
-            border-radius: 50px;
-            padding: 3px 10px;
-            font-size: 0.78rem;
-            font-weight: 700;
-        }
-
-        /* dtype badge */
-        .dtype-badge {
-            background: rgba(108, 99, 255, 0.15);
+        .pill-count {
+            background: rgba(160, 80, 255, 0.1);
             color: var(--accent2);
-            border-radius: 6px;
-            padding: 2px 10px;
-            font-size: 0.75rem;
+            border: 1px solid rgba(160, 80, 255, 0.25);
+            border-radius: 50px;
+            padding: 3px 12px;
+            font-family: var(--mono);
+            font-size: 0.55rem;
             font-weight: 700;
-            font-family: monospace;
+            letter-spacing: 0.08em;
         }
 
-        /* Stats table scroll wrapper */
+        /* ── TABLE ── */
         .table-scroll {
             overflow-x: auto;
         }
 
-        /* Section header */
-        .sec-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 16px;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
         }
 
-        .sec-header h2 {
-            font-size: 1.15rem;
-            font-weight: 800;
+        thead tr {
+            border-bottom: 1px solid var(--border);
         }
 
-        .sec-header .pill-count {
-            background: rgba(108, 99, 255, 0.15);
-            color: var(--accent);
-            border-radius: 50px;
-            padding: 2px 12px;
-            font-size: 0.8rem;
+        thead th {
+            font-family: var(--mono);
+            font-size: 0.58rem;
             font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            padding: 10px 14px;
+            text-align: left;
+            white-space: nowrap;
         }
 
-        /* Next steps bar */
+        tbody tr {
+            border-bottom: 1px solid rgba(160, 80, 255, 0.06);
+            transition: background 0.15s;
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: rgba(160, 80, 255, 0.04);
+        }
+
+        tbody td {
+            padding: 11px 14px;
+            color: var(--text);
+            font-size: 0.85rem;
+        }
+
+        tbody td strong {
+            color: var(--accent2);
+            font-weight: 500;
+        }
+
+        /* ── DTYPE BADGE ── */
+        .dtype-badge {
+            background: rgba(160, 80, 255, 0.1);
+            color: var(--accent2);
+            border: 1px solid rgba(160, 80, 255, 0.22);
+            border-radius: 3px;
+            padding: 2px 10px;
+            font-family: var(--mono);
+            font-size: 0.6rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+        }
+
+        /* ── STATUS PILLS ── */
+        .pill-ok {
+            background: rgba(68, 255, 170, 0.08);
+            color: #88ffcc;
+            border: 1px solid rgba(68, 255, 170, 0.3);
+            border-radius: 50px;
+            padding: 3px 10px;
+            font-family: var(--mono);
+            font-size: 0.58rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+
+        .pill-warn {
+            background: rgba(245, 176, 66, 0.1);
+            color: #f5b042;
+            border: 1px solid rgba(245, 176, 66, 0.35);
+            border-radius: 50px;
+            padding: 3px 10px;
+            font-family: var(--mono);
+            font-size: 0.58rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+
+        .pill-danger {
+            background: rgba(255, 60, 100, 0.08);
+            color: #ff8099;
+            border: 1px solid rgba(255, 60, 100, 0.3);
+            border-radius: 50px;
+            padding: 3px 10px;
+            font-family: var(--mono);
+            font-size: 0.58rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+
+        /* ── NEXT STEPS ── */
         .next-bar {
             display: flex;
             gap: 12px;
             flex-wrap: wrap;
             margin-top: 10px;
         }
+
+        .next-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-left: 2px solid var(--accent2);
+            border-radius: 10px;
+            padding: 1.8rem 2rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(16px);
+            animation: fade-up 0.6s ease 0.55s forwards;
+        }
+
+        .next-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, var(--accent2), var(--pink), transparent);
+        }
+
+        .next-card h3 {
+            font-family: var(--mono);
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            margin-bottom: 1.2rem;
+            color: var(--text);
+        }
+
+        /* ── BUTTONS ── */
+        .btn-primary {
+            font-family: var(--mono);
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 12px 24px;
+            background: var(--accent);
+            color: #04020a;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.15s;
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 60%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.15);
+            transform: skewX(-20deg);
+            transition: left 0.4s ease;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.88;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:hover::before {
+            left: 160%;
+        }
+
+        .btn-secondary {
+            font-family: var(--mono);
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 12px 24px;
+            background: transparent;
+            color: var(--accent2);
+            border: 1px solid rgba(160, 80, 255, 0.35);
+            border-radius: 4px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s, color 0.2s;
+            display: inline-block;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent);
+            background: rgba(160, 80, 255, 0.1);
+            color: var(--text);
+        }
+
+        /* ── FOOTER ── */
+        .footer {
+            position: relative;
+            z-index: 1;
+            border-top: 1px solid var(--border);
+            padding: 1.4rem 6%;
+            text-align: center;
+            background: var(--bg);
+            font-family: var(--mono);
+            font-size: 0.55rem;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+        }
     </style>
 </head>
 
 <body>
 
+    <canvas id="bg-canvas"></canvas>
+
     <!-- NAVBAR -->
-    <nav class="navbar">
-        <a class="nav-brand" href="/">ML <span>Ready</span> AI</a>
-        <div class="nav-links">
-            <a href="/">Home</a>
-            <a href="/upload">Upload</a>
-            <a href="/summary" class="active">Summary</a>
-        </div>
+    <nav>
+        <a class="nav-logo" href="/"><span class="nav-dot"></span>ML<span>Ready</span>&nbsp;AI</a>
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/upload">Upload</a></li>
+            <li><a href="/summary" class="active">Summary</a></li>
+        </ul>
     </nav>
 
     <div class="page-container">
 
-        <!-- Page title + file name -->
+        <!-- Page title + filename — UNTOUCHED -->
         <h1 class="page-title">📊 Data Summary</h1>
         <p class="page-subtitle">
             File: <strong style="color:var(--accent2)">{{ filename }}</strong>
         </p>
 
-        <!-- Flash messages -->
+        <!-- Flash messages — UNTOUCHED -->
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}{% for cat, msg in messages %}
         <div class="flash {{ cat }}">{{ msg }}</div>
         {% endfor %}{% endif %}
         {% endwith %}
 
-        <!-- ── 1. KEY METRICS ───────────────────────────── -->
+        <!-- ── 1. KEY METRICS — UNTOUCHED ── -->
         <div class="metrics-row">
             <div class="metric-card">
-                <div class="metric-value">{{ summary.rows }}</div>
-                <div class="metric-label">Rows</div>
+                <span class="metric-value">{{ summary.rows }}</span>
+                <span class="metric-label">Rows</span>
             </div>
             <div class="metric-card">
-                <div class="metric-value">{{ summary.cols }}</div>
-                <div class="metric-label">Columns</div>
+                <span class="metric-value">{{ summary.cols }}</span>
+                <span class="metric-label">Columns</span>
             </div>
             <div class="metric-card">
-                <div class="metric-value">
+                <span class="metric-value">
                     {{ summary.columns_info | selectattr('missing', '>', 0) | list | length }}
-                </div>
-                <div class="metric-label">Cols with Missing</div>
+                </span>
+                <span class="metric-label">Cols with Missing</span>
             </div>
             <div class="metric-card">
-                <div class="metric-value">{{ summary.stats | length }}</div>
-                <div class="metric-label">Numeric Cols</div>
+                <span class="metric-value">{{ summary.stats | length }}</span>
+                <span class="metric-label">Numeric Cols</span>
             </div>
         </div>
 
-        <!-- ── 2. COLUMN INFO TABLE ─────────────────────── -->
+        <!-- ── 2. COLUMN INFO TABLE — UNTOUCHED ── -->
         <div class="card">
             <div class="sec-header">
                 <h2>🗂️ Column Information</h2>
@@ -214,7 +687,7 @@
             </div>
         </div>
 
-        <!-- ── 3. DESCRIPTIVE STATISTICS ───────────────── -->
+        <!-- ── 3. DESCRIPTIVE STATISTICS — UNTOUCHED ── -->
         {% if summary.stats %}
         <div class="card">
             <div class="sec-header">
@@ -256,11 +729,12 @@
         </div>
         {% else %}
         <div class="card">
-            <p style="color:var(--text-muted)">⚠️ No numeric columns found — statistics table is not available.</p>
+            <p style="color:var(--muted); font-size:0.88rem;">⚠️ No numeric columns found — statistics table is not
+                available.</p>
         </div>
         {% endif %}
 
-        <!-- ── 4. DATA PREVIEW (first 5 rows) ───────────── -->
+        <!-- ── 4. DATA PREVIEW — UNTOUCHED ── -->
         <div class="card">
             <div class="sec-header">
                 <h2>👁️ Data Preview</h2>
@@ -288,19 +762,81 @@
             </div>
         </div>
 
-        <!-- ── 5. NEXT STEPS ─────────────────────────────── -->
-        <div class="card" style="border-left: 3px solid var(--accent2);">
-            <h3 style="margin-bottom:14px">⚡ What would you like to do next?</h3>
+        <!-- ── 5. NEXT STEPS — UNTOUCHED ── -->
+        <div class="next-card">
+            <h3>⚡ What would you like to do next?</h3>
             <div class="next-bar">
-                <a href="/eda" class="btn-primary" style="font-size:0.9rem; padding:11px 24px;">📊 Explore Data
-                    (EDA)</a>
-                <a href="/cleaning" class="btn-secondary" style="font-size:0.9rem; padding:11px 24px;">🧹 Clean Data</a>
+                <a href="/eda" class="btn-primary">📊 Explore Data (EDA)</a>
+                <a href="/cleaning" class="btn-secondary">🧹 Clean Data</a>
             </div>
         </div>
 
-    </div><!-- /page-container -->
+    </div>
 
-    <footer class="footer">ML Ready AI &copy; 2025 — Final Year Project</footer>
+    <footer class="footer">MLReady AI © 2025 — Final Year Project</footer>
+
+    <!-- CONSTELLATION BACKGROUND -->
+    <script>
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let W, H, stars = [];
+        const mouse = { x: -9999, y: -9999 };
+        const PALETTE = ['rgba(160,80,255,', 'rgba(204,136,255,', 'rgba(224,64,255,', 'rgba(123,47,255,', 'rgba(230,210,255,'];
+
+        function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+
+        function initStars() {
+            stars = [];
+            const n = Math.floor(W * H / 6500);
+            for (let i = 0; i < n; i++) {
+                const a = Math.random() * 0.55 + 0.08;
+                stars.push({ x: Math.random() * W, y: Math.random() * H, r: Math.random() * 1.9 + 0.3, baseAlpha: a, alpha: a, vx: (Math.random() - 0.5) * 0.1, vy: (Math.random() - 0.5) * 0.1, color: PALETTE[Math.floor(Math.random() * PALETTE.length)], twOff: Math.random() * Math.PI * 2, twSpd: Math.random() * 0.011 + 0.003 });
+            }
+        }
+
+        resize(); initStars();
+        window.addEventListener('resize', () => { resize(); initStars(); });
+        window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+
+        let frame = 0; const shooters = [];
+
+        function spawnShooter() { shooters.push({ x: Math.random() * W * 0.65, y: Math.random() * H * 0.4, len: Math.random() * 110 + 50, spd: Math.random() * 7 + 4, ang: Math.PI / 4 + (Math.random() - 0.5) * 0.3, life: 1 }); }
+
+        function drawShooters() {
+            for (let i = shooters.length - 1; i >= 0; i--) {
+                const s = shooters[i], ex = s.x + Math.cos(s.ang) * s.len, ey = s.y + Math.sin(s.ang) * s.len;
+                const g = ctx.createLinearGradient(s.x, s.y, ex, ey);
+                g.addColorStop(0, `rgba(204,136,255,0)`); g.addColorStop(1, `rgba(204,136,255,${s.life * 0.75})`);
+                ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(ex, ey); ctx.strokeStyle = g; ctx.lineWidth = 1.5; ctx.stroke();
+                s.x += Math.cos(s.ang) * s.spd; s.y += Math.sin(s.ang) * s.spd; s.life -= 0.022;
+                if (s.life <= 0) shooters.splice(i, 1);
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, W, H); frame++;
+            if (frame % 300 === 0) spawnShooter();
+            for (let i = 0; i < stars.length; i++) {
+                const s = stars[i];
+                s.x += s.vx; s.y += s.vy;
+                if (s.x < 0) s.x = W; if (s.x > W) s.x = 0; if (s.y < 0) s.y = H; if (s.y > H) s.y = 0;
+                s.alpha = s.baseAlpha * (0.55 + 0.45 * Math.sin(frame * s.twSpd + s.twOff));
+                const dx = s.x - mouse.x, dy = s.y - mouse.y, d = Math.sqrt(dx * dx + dy * dy);
+                if (d < 90 && d > 0) { const f = (90 - d) / 90 * 0.35; s.x += dx / d * f; s.y += dy / d * f; }
+                ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fillStyle = s.color + s.alpha + ')'; ctx.fill();
+            }
+            for (let i = 0; i < stars.length; i++) {
+                for (let j = i + 1; j < stars.length; j++) {
+                    const dx = stars[i].x - stars[j].x, dy = stars[i].y - stars[j].y, d2 = dx * dx + dy * dy;
+                    if (d2 < 12100) { ctx.beginPath(); ctx.moveTo(stars[i].x, stars[i].y); ctx.lineTo(stars[j].x, stars[j].y); ctx.strokeStyle = `rgba(160,80,255,${(1 - Math.sqrt(d2) / 110) * 0.13})`; ctx.lineWidth = 0.5; ctx.stroke(); }
+                }
+            }
+            drawShooters();
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
 
 </body>
 

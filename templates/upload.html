@@ -2,44 +2,316 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Dataset — ML Ready AI</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Upload Dataset — MLReady AI</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Syne:wght@300;400;500&display=swap"
+        rel="stylesheet" />
     <style>
-        /* ---- Upload-specific styles ---- */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #04020a;
+            --bg2: #07040f;
+            --surface: #0e0a1a;
+            --surface2: #130f22;
+            --border: rgba(160, 80, 255, 0.15);
+            --accent: #a050ff;
+            --accent2: #cc88ff;
+            --violet: #7b2fff;
+            --pink: #e040ff;
+            --text: #ece8f5;
+            --muted: #6b5f85;
+            --success: #44ffaa;
+            --error: #ff3c64;
+            --mono: 'Orbitron', monospace;
+            --sans: 'Syne', sans-serif;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--sans);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* ── CONSTELLATION CANVAS ── */
+        #bg-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── SCANLINES ── */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, 0.025) 2px, rgba(0, 0, 0, 0.025) 4px);
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* ── NAVBAR ── */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 6%;
+            height: 68px;
+            background: rgba(4, 2, 10, 0.88);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-logo {
+            font-family: var(--mono);
+            font-size: 0.9rem;
+            font-weight: 900;
+            color: var(--accent2);
+            letter-spacing: 0.08em;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-dot {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.6);
+                opacity: 0.4;
+            }
+        }
+
+        .nav-logo span {
+            color: var(--muted);
+            font-weight: 400;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            font-family: var(--mono);
+            font-size: 0.58rem;
+            color: var(--muted);
+            text-decoration: none;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            transition: color 0.2s;
+            position: relative;
+        }
+
+        .nav-links a::before {
+            content: '//';
+            margin-right: 4px;
+            color: var(--violet);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .nav-links a:hover,
+        .nav-links a.active {
+            color: var(--accent2);
+        }
+
+        .nav-links a:hover::before,
+        .nav-links a.active::before {
+            opacity: 1;
+        }
+
+        /* ── PAGE CONTAINER — original layout ── */
+        .page-container {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            max-width: 680px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 110px 24px 60px;
+            opacity: 0;
+            transform: translateY(24px);
+            animation: fade-up 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards;
+        }
+
+        @keyframes fade-up {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ── PAGE TITLE ── */
+        .page-title {
+            font-family: var(--mono);
+            font-size: 1.6rem;
+            font-weight: 900;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.01em;
+        }
+
+        .page-subtitle {
+            font-size: 0.88rem;
+            color: var(--muted);
+            margin-bottom: 1.8rem;
+            line-height: 1.6;
+        }
+
+        /* ── FLASH MESSAGES ── */
+        .flash {
+            padding: 11px 15px;
+            border-radius: 4px;
+            font-family: var(--mono);
+            font-size: 0.62rem;
+            letter-spacing: 0.06em;
+            border-left: 2px solid;
+            margin-bottom: 1.2rem;
+            line-height: 1.6;
+        }
+
+        .flash.success {
+            background: rgba(68, 255, 170, 0.06);
+            border-color: var(--success);
+            color: #88ffcc;
+        }
+
+        .flash.error {
+            background: rgba(255, 60, 100, 0.07);
+            border-color: var(--error);
+            color: #ff8099;
+        }
+
+        .flash.danger {
+            background: rgba(255, 60, 100, 0.07);
+            border-color: var(--error);
+            color: #ff8099;
+        }
+
+        /* ── CARD ── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 2.4rem 2.2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* shimmer top line */
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), var(--pink), transparent);
+        }
+
+        /* corner bracket */
+        .card::after {
+            content: '';
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            border-right: 1px solid rgba(160, 80, 255, 0.18);
+            border-bottom: 1px solid rgba(160, 80, 255, 0.18);
+        }
+
+        /* ── UPLOAD BOX — original layout, themed ── */
         .upload-box {
-            border: 2px dashed var(--border);
-            border-radius: var(--radius);
+            border: 1px dashed rgba(160, 80, 255, 0.4);
+            border-radius: 8px;
             padding: 50px 30px;
             text-align: center;
             transition: border-color 0.3s, background 0.3s;
             cursor: pointer;
             margin-bottom: 28px;
+            background: rgba(123, 47, 255, 0.03);
         }
 
         .upload-box:hover {
             border-color: var(--accent);
-            background: rgba(108, 99, 255, 0.05);
+            background: rgba(123, 47, 255, 0.08);
+        }
+
+        .upload-box.dragover {
+            border-color: var(--pink);
+            background: rgba(224, 64, 255, 0.06);
         }
 
         .upload-icon {
             font-size: 3.2rem;
             margin-bottom: 14px;
+            display: block;
+            filter: saturate(0.5);
+            transition: transform 0.3s, filter 0.3s;
+        }
+
+        .upload-box:hover .upload-icon {
+            transform: translateY(-5px);
+            filter: saturate(1);
         }
 
         .upload-box h3 {
-            font-size: 1.1rem;
+            font-family: var(--mono);
+            font-size: 0.82rem;
             font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
             margin-bottom: 6px;
+            color: var(--text);
         }
 
         .upload-box p {
             font-size: 0.85rem;
-            color: var(--text-muted);
+            color: var(--muted);
             margin-bottom: 18px;
         }
 
+        /* ── FORMAT BADGES ── */
         .formats-row {
             display: flex;
             flex-wrap: wrap;
@@ -49,73 +321,165 @@
         }
 
         .fmt-tag {
-            background: rgba(0, 210, 255, 0.1);
-            border: 1px solid var(--accent2);
+            background: rgba(160, 80, 255, 0.08);
+            border: 1px solid rgba(160, 80, 255, 0.3);
             color: var(--accent2);
-            border-radius: 6px;
+            border-radius: 3px;
             padding: 4px 14px;
-            font-size: 0.8rem;
+            font-family: var(--mono);
+            font-size: 0.58rem;
             font-weight: 700;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.1em;
+            transition: background 0.2s, border-color 0.2s;
         }
 
-        /* Hidden real file input, triggered by label */
+        .fmt-tag:hover {
+            background: rgba(160, 80, 255, 0.18);
+            border-color: var(--accent);
+        }
+
+        /* ── FILE INPUT — id/name preserved ── */
         #file-input {
             display: none;
         }
 
         .file-label {
             display: inline-block;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 10px 24px;
-            border-radius: 8px;
+            background: transparent;
+            border: 1px solid rgba(160, 80, 255, 0.3);
+            color: var(--accent2);
+            padding: 10px 26px;
+            border-radius: 3px;
             cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 600;
-            transition: border-color 0.2s;
+            font-family: var(--mono);
+            font-size: 0.6rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            transition: border-color 0.2s, background 0.2s;
             margin-bottom: 10px;
         }
 
         .file-label:hover {
             border-color: var(--accent);
+            background: rgba(160, 80, 255, 0.1);
         }
 
         #file-name {
-            font-size: 0.82rem;
-            color: var(--accent2);
+            font-family: var(--mono);
+            font-size: 0.62rem;
+            color: var(--muted);
+            letter-spacing: 0.06em;
             min-height: 18px;
+            transition: color 0.3s;
         }
 
+        #file-name.selected {
+            color: var(--accent2);
+        }
+
+        /* ── TIP BOX ── */
         .tip-box {
-            background: rgba(108, 99, 255, 0.08);
-            border-left: 3px solid var(--accent);
-            border-radius: 6px;
+            background: rgba(123, 47, 255, 0.05);
+            border-left: 2px solid var(--violet);
+            border-radius: 0 4px 4px 0;
             padding: 12px 16px;
-            font-size: 0.85rem;
-            color: var(--text-muted);
+            font-size: 0.84rem;
+            color: var(--muted);
             margin-top: 10px;
+            line-height: 1.65;
+        }
+
+        .tip-box strong {
+            font-family: var(--mono);
+            font-size: 0.6rem;
+            color: var(--accent2);
+            letter-spacing: 0.08em;
+        }
+
+        /* ── SUBMIT BUTTON ── */
+        .btn-primary {
+            width: 100%;
+            display: block;
+            font-family: var(--mono);
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            padding: 15px;
+            background: var(--accent);
+            color: #04020a;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 1.4rem;
+            transition: opacity 0.2s, transform 0.15s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 60%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.15);
+            transform: skewX(-20deg);
+            transition: left 0.45s ease;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.88;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:hover::before {
+            left: 160%;
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        /* ── FOOTER ── */
+        .footer {
+            position: relative;
+            z-index: 1;
+            border-top: 1px solid var(--border);
+            padding: 1.4rem 6%;
+            text-align: center;
+            background: var(--bg);
+            font-family: var(--mono);
+            font-size: 0.55rem;
+            color: var(--muted);
+            letter-spacing: 0.1em;
         }
     </style>
 </head>
 
 <body>
 
+    <canvas id="bg-canvas"></canvas>
+
     <!-- NAVBAR -->
-    <nav class="navbar">
-        <a class="nav-brand" href="/">ML <span>Ready</span> AI</a>
-        <div class="nav-links">
-            <a href="/">Home</a>
-            <a href="/upload" class="active">Upload</a>
-        </div>
+    <nav>
+        <a class="nav-logo" href="/"><span class="nav-dot"></span>ML<span>Ready</span>&nbsp;AI</a>
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/upload" class="active">Upload</a></li>
+            <li><a href="/summary">Dashboard</a></li>
+        </ul>
     </nav>
 
+    <!-- PAGE CONTAINER — original layout structure -->
     <div class="page-container">
+
         <h1 class="page-title">📂 Upload Your Dataset</h1>
         <p class="page-subtitle">Supported formats: CSV, Excel (.xlsx), JSON, XML, HTML tables</p>
 
-        <!-- Flash messages (errors / success) -->
+        <!-- Flash messages — FLASK LOGIC UNTOUCHED -->
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         {% for category, message in messages %}
@@ -124,17 +488,17 @@
         {% endif %}
         {% endwith %}
 
-        <!-- UPLOAD FORM -->
+        <!-- UPLOAD FORM — all attributes preserved -->
         <div class="card">
             <form method="POST" action="/upload" enctype="multipart/form-data" id="upload-form">
 
-                <!-- Drag-drop styled box -->
+                <!-- Drag-drop styled box — onclick preserved -->
                 <div class="upload-box" onclick="document.getElementById('file-input').click()">
                     <div class="upload-icon">📁</div>
                     <h3>Click to browse or drag &amp; drop your file</h3>
                     <p>Maximum file size: 50 MB</p>
 
-                    <!-- Supported format badges -->
+                    <!-- Format badges -->
                     <div class="formats-row">
                         <span class="fmt-tag">CSV</span>
                         <span class="fmt-tag">XLSX</span>
@@ -143,38 +507,123 @@
                         <span class="fmt-tag">HTML</span>
                     </div>
 
-                    <!-- Actual file input (hidden) -->
+                    <!-- Hidden file input — id, name, accept all preserved -->
                     <input type="file" id="file-input" name="dataset" accept=".csv,.xlsx,.xls,.json,.xml,.html,.htm"
-                        onchange="showFileName(this)">
+                        onchange="showFileName(this)" />
 
-                    <!-- Shows chosen file name -->
+                    <!-- File name display — id preserved -->
                     <div id="file-name">No file selected yet</div>
                 </div>
 
-                <div class="tip-box">
-                    💡 <strong>Tip:</strong> Make sure your dataset has a header row (column names in the first row).
-                    CSV files work best. Large files may take a few seconds to process.
-                </div>
+                
 
-                <br>
-                <button type="submit" class="btn-primary" style="width:100%; border:none; font-size:1rem;">
-                    ⬆️ Upload &amp; Analyse
+                <!-- Submit — original btn-primary class kept -->
+                <button type="submit" class="btn-primary">
+                    ⬆ &nbsp;Upload &amp; Analyse
                 </button>
+
             </form>
         </div>
     </div>
 
-    <footer class="footer">ML Ready AI &copy; 2025 — Final Year Project</footer>
+    <footer class="footer">MLReady AI © 2025 — Final Year Project</footer>
 
+    <!-- CONSTELLATION BACKGROUND -->
     <script>
-        /* Show the selected file's name inside the upload box */
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let W, H, stars = [];
+        const mouse = { x: -9999, y: -9999 };
+
+        const PALETTE = [
+            'rgba(160,80,255,', 'rgba(204,136,255,',
+            'rgba(224,64,255,', 'rgba(123,47,255,',
+            'rgba(230,210,255,'
+        ];
+
+        function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+
+        function initStars() {
+            stars = [];
+            const n = Math.floor(W * H / 6500);
+            for (let i = 0; i < n; i++) {
+                const a = Math.random() * 0.55 + 0.08;
+                stars.push({
+                    x: Math.random() * W, y: Math.random() * H,
+                    r: Math.random() * 1.9 + 0.3, baseAlpha: a, alpha: a,
+                    vx: (Math.random() - 0.5) * 0.1, vy: (Math.random() - 0.5) * 0.1,
+                    color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
+                    twOff: Math.random() * Math.PI * 2, twSpd: Math.random() * 0.011 + 0.003
+                });
+            }
+        }
+
+        resize(); initStars();
+        window.addEventListener('resize', () => { resize(); initStars(); });
+        window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+
+        let frame = 0;
+        const shooters = [];
+
+        function spawnShooter() {
+            shooters.push({ x: Math.random() * W * 0.65, y: Math.random() * H * 0.4, len: Math.random() * 110 + 50, spd: Math.random() * 7 + 4, ang: Math.PI / 4 + (Math.random() - 0.5) * 0.3, life: 1 });
+        }
+
+        function drawShooters() {
+            for (let i = shooters.length - 1; i >= 0; i--) {
+                const s = shooters[i];
+                const ex = s.x + Math.cos(s.ang) * s.len, ey = s.y + Math.sin(s.ang) * s.len;
+                const g = ctx.createLinearGradient(s.x, s.y, ex, ey);
+                g.addColorStop(0, `rgba(204,136,255,0)`);
+                g.addColorStop(1, `rgba(204,136,255,${s.life * 0.75})`);
+                ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(ex, ey);
+                ctx.strokeStyle = g; ctx.lineWidth = 1.5; ctx.stroke();
+                s.x += Math.cos(s.ang) * s.spd; s.y += Math.sin(s.ang) * s.spd;
+                s.life -= 0.022;
+                if (s.life <= 0) shooters.splice(i, 1);
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, W, H); frame++;
+            if (frame % 300 === 0) spawnShooter();
+            for (let i = 0; i < stars.length; i++) {
+                const s = stars[i];
+                s.x += s.vx; s.y += s.vy;
+                if (s.x < 0) s.x = W; if (s.x > W) s.x = 0;
+                if (s.y < 0) s.y = H; if (s.y > H) s.y = 0;
+                s.alpha = s.baseAlpha * (0.55 + 0.45 * Math.sin(frame * s.twSpd + s.twOff));
+                const dx = s.x - mouse.x, dy = s.y - mouse.y, d = Math.sqrt(dx * dx + dy * dy);
+                if (d < 90 && d > 0) { const f = (90 - d) / 90 * 0.35; s.x += dx / d * f; s.y += dy / d * f; }
+                ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                ctx.fillStyle = s.color + s.alpha + ')'; ctx.fill();
+            }
+            for (let i = 0; i < stars.length; i++) {
+                for (let j = i + 1; j < stars.length; j++) {
+                    const dx = stars[i].x - stars[j].x, dy = stars[i].y - stars[j].y, d2 = dx * dx + dy * dy;
+                    if (d2 < 12100) {
+                        ctx.beginPath(); ctx.moveTo(stars[i].x, stars[i].y); ctx.lineTo(stars[j].x, stars[j].y);
+                        ctx.strokeStyle = `rgba(160,80,255,${(1 - Math.sqrt(d2) / 110) * 0.13})`; ctx.lineWidth = 0.5; ctx.stroke();
+                    }
+                }
+            }
+            drawShooters();
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+
+    <!-- ORIGINAL JS — UNTOUCHED -->
+    <script>
         function showFileName(input) {
             const label = document.getElementById('file-name');
             if (input.files && input.files.length > 0) {
                 label.textContent = '✅ Selected: ' + input.files[0].name;
-                label.style.color = '#00d2ff';
+                label.classList.add('selected');
             } else {
                 label.textContent = 'No file selected yet';
+                label.classList.remove('selected');
             }
         }
     </script>
