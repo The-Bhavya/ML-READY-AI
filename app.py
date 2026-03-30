@@ -39,7 +39,7 @@ class User(UserMixin, db.Model):
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
-with app.app_context():...
+with app.app_context():
     db.create_all()
 
 
@@ -72,13 +72,13 @@ def home():
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email']
-        password = request.form['password']
-        confirm_password = request.form['confirm_password']
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
 
         # validations 
-        if not name or len(name.strip())<2:
+        if not name or len(name) < 2:
             flash('Name must be at least 2 characters long.', 'error')
             return redirect(url_for('signup'))
 
@@ -109,7 +109,7 @@ def signup():
             db.session.add(new_user)
             db.session.commit()
             flash('Registration successful! Please log in.', 'success')
-            return redirect(url_for('signup'))
+            return redirect(url_for('login'))
         except Exception as e:
             db.session.rollback()
             flash('An error occurred during registration. Please try again.', 'error')
@@ -144,6 +144,7 @@ def logout():
     return redirect(url_for('login'))
 
 @app.route('/upload', methods=['GET', 'POST'])
+@login_required
 def upload():
     """
     GET  → show the upload form
@@ -401,10 +402,7 @@ def train_model():
         _store['metrics']       = metrics
         
         # Format metrics and render the result page (Module 13)
-        return render_template('result.html', 
-                               metrics=metrics, 
-                               algorithm=algorithm, 
-                               problem_type=problem_type)
+        return render_template('result.html', metrics=metrics, algorithm=algorithm, problem_type=problem_type)
     except Exception as e:
         flash(f'Error during training: {e}', 'error')
         return redirect(url_for('algorithm_selection'))
@@ -482,10 +480,7 @@ def final_dashboard():
         flash('⚠️ Training metrics missing. Please train a model first.', 'error')
         return redirect(url_for('train_model'))
 
-    return render_template('final.html', 
-                          problem_type=problem_type, 
-                          algorithm=algorithm, 
-                          metrics=metrics)
+    return render_template('final.html', problem_type=problem_type, algorithm=algorithm, metrics=metrics)
 
 
 
