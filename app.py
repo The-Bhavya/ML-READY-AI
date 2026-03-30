@@ -39,7 +39,7 @@ class User(UserMixin, db.Model):
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
-with app.app_context():
+with app.app_context():...
     db.create_all()
 
 
@@ -271,10 +271,7 @@ def cleaning():
     outlier_stats = detect_outliers(df)
     duplicate_count = int(df.duplicated().sum())
     
-    return render_template('cleaning.html', 
-                          missing_stats=missing_stats, 
-                          outlier_stats=outlier_stats,
-                          duplicate_count=duplicate_count)
+    return render_template('cleaning.html', missing_stats=missing_stats, outlier_stats=outlier_stats,duplicate_count=duplicate_count)
 
 
 # ── MODULE 9 — Feature Engineering ───────────────────────
