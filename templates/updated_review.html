@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Review Updated Data — MLReady AI</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Syne:wght@300;400;500&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #04020a;
+            --bg2: #07040f;
+            --surface: #0e0a1a;
+            --surface2: #130f22;
+            --border: rgba(160, 80, 255, 0.15);
+            --accent: #a050ff;
+            --accent2: #cc88ff;
+            --violet: #7b2fff;
+            --pink: #e040ff;
+            --text: #ece8f5;
+            --muted: #6b5f85;
+            --success: #44ffaa;
+            --warn: #f5b042;
+            --error: #ff3c64;
+            --mono: 'Orbitron', monospace;
+            --sans: 'Syne', sans-serif;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--sans);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        #bg-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, 0.025) 2px, rgba(0, 0, 0, 0.025) 4px);
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* ── NAVBAR ── */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 6%;
+            height: 68px;
+            background: rgba(4, 2, 10, 0.88);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-logo {
+            font-family: var(--mono);
+            font-size: 0.9rem;
+            font-weight: 900;
+            color: var(--accent2);
+            letter-spacing: 0.08em;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.6); opacity: 0.4; }
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            font-family: var(--mono);
+            font-size: 0.58rem;
+            color: var(--muted);
+            text-decoration: none;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            transition: color 0.2s;
+            position: relative;
+        }
+
+        .nav-links a:hover,
+        .nav-links a.active {
+            color: var(--accent2);
+        }
+
+        /* ── PAGE ── */
+        .page-container {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            max-width: 1100px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 100px 24px 60px;
+        }
+
+        .page-title {
+            font-family: var(--mono);
+            font-size: 1.7rem;
+            font-weight: 900;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.01em;
+        }
+
+        .page-subtitle {
+            font-size: 0.9rem;
+            color: var(--muted);
+            margin-bottom: 2rem;
+        }
+
+        /* ── CARDS ── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.8rem 2rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), var(--pink), transparent);
+        }
+
+        .sec-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .sec-header h2 {
+            font-family: var(--mono);
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--text);
+        }
+
+        /* ── TABLE ── */
+        .table-scroll {
+            overflow-x: auto;
+            margin-bottom: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        thead tr { border-bottom: 1px solid var(--border); }
+        thead th {
+            font-family: var(--mono);
+            font-size: 0.58rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            padding: 10px 14px;
+            text-align: left;
+        }
+
+        tbody tr { border-bottom: 1px solid rgba(160, 80, 255, 0.06); }
+        tbody td { padding: 11px 14px; color: var(--text); }
+        tbody td strong { color: var(--accent2); font-weight: 500; }
+
+        .dtype-badge {
+            background: rgba(160, 80, 255, 0.1);
+            color: var(--accent2);
+            border: 1px solid rgba(160, 80, 255, 0.22);
+            border-radius: 3px;
+            padding: 2px 10px;
+            font-family: var(--mono);
+            font-size: 0.6rem;
+            font-weight: 700;
+        }
+
+        /* ── PLOTS ── */
+        .plot-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+
+        .plot-card {
+            background: #0a0815;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .plot-img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            border: 1px solid rgba(160, 80, 255, 0.1);
+        }
+
+        .plot-title {
+            font-family: var(--mono);
+            font-size: 0.65rem;
+            color: var(--accent2);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        /* ── BUTTONS ── */
+        .next-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-left: 2px solid var(--success);
+            border-radius: 10px;
+            padding: 1.8rem 2rem;
+            margin-top: 2rem;
+        }
+
+        .btn-primary {
+            font-family: var(--mono);
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 12px 24px;
+            background: var(--accent);
+            color: #04020a;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .btn-secondary {
+            font-family: var(--mono);
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 12px 24px;
+            background: transparent;
+            color: var(--accent2);
+            border: 1px solid rgba(160, 80, 255, 0.35);
+            border-radius: 4px;
+            text-decoration: none;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        .footer {
+            border-top: 1px solid var(--border);
+            padding: 1.4rem 6%;
+            text-align: center;
+            font-family: var(--mono);
+            font-size: 0.55rem;
+            color: var(--muted);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="bg-canvas"></canvas>
+    <nav>
+        <a class="nav-logo" href="/"><span class="nav-dot"></span>ML<span>Ready</span>&nbsp;AI</a>
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/upload">Upload</a></li>
+            <li><a href="/review_updated" class="active">Review</a></li>
+        </ul>
+    </nav>
+
+    <div class="page-container">
+        <h1 class="page-title">✨ Updated Data Review</h1>
+        <p class="page-subtitle">Verify your dataset after cleaning and preprocessing.</p>
+
+        <!-- 0. KEY METRICS -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px;">
+            <div class="card" style="text-align: center; padding: 1.5rem;">
+                <span style="display: block; font-family: var(--mono); font-size: 1.8rem; font-weight: 900; color: var(--accent2);">{{ summary.rows }}</span>
+                <span style="display: block; font-family: var(--mono); font-size: 0.55rem; color: var(--muted); text-transform: uppercase; margin-top: 5px;">Rows</span>
+            </div>
+            <div class="card" style="text-align: center; padding: 1.5rem;">
+                <span style="display: block; font-family: var(--mono); font-size: 1.8rem; font-weight: 900; color: var(--accent2);">{{ summary.cols }}</span>
+                <span style="display: block; font-family: var(--mono); font-size: 0.55rem; color: var(--muted); text-transform: uppercase; margin-top: 5px;">Columns</span>
+            </div>
+            <div class="card" style="text-align: center; padding: 1.5rem;">
+                <span style="display: block; font-family: var(--mono); font-size: 1.8rem; font-weight: 900; color: var(--accent2);">{{ summary.columns_info | selectattr('missing', '>', 0) | list | length }}</span>
+                <span style="display: block; font-family: var(--mono); font-size: 0.55rem; color: var(--muted); text-transform: uppercase; margin-top: 5px;">Missing Columns</span>
+            </div>
+        </div>
+
+        <!-- 1. SUMMARY TABLE -->
+        <div class="card">
+            <div class="sec-header">
+                <h2>🗂️ Updated Column Summary</h2>
+            </div>
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Column Name</th>
+                            <th>Data Type</th>
+                            <th>Missing</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for col in summary.columns_info %}
+                        <tr>
+                            <td><strong>{{ col.name }}</strong></td>
+                            <td><span class="dtype-badge">{{ col.dtype }}</span></td>
+                            <td>{{ col.missing }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 2. EDA VISUALS -->
+        <div class="card">
+            <div class="sec-header">
+                <h2>📊 Updated EDA Visuals</h2>
+            </div>
+            <div class="plot-grid">
+                {% if plots.histograms %}
+                <div class="plot-card">
+                    <div class="plot-title">Numeric Distributions</div>
+                    <img src="data:image/png;base64,{{ plots.histograms }}" class="plot-img" alt="Histograms">
+                </div>
+                {% endif %}
+
+                {% if plots.bar_charts %}
+                <div class="plot-card">
+                    <div class="plot-title">Categorical Overviews</div>
+                    <img src="data:image/png;base64,{{ plots.bar_charts }}" class="plot-img" alt="Bar Charts">
+                </div>
+                {% endif %}
+
+                {% if plots.heatmap %}
+                <div class="plot-card">
+                    <div class="plot-title">Correlation Heatmap</div>
+                    <img src="data:image/png;base64,{{ plots.heatmap }}" class="plot-img" alt="Heatmap">
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- NEXT STEPS -->
+        <div class="next-card">
+            <h3 style="font-family:var(--mono); font-size:0.8rem; margin-bottom:1rem; color:var(--text)">🚀 Ready for Modeling?</h3>
+            <p style="font-size:0.85rem; color:var(--muted); margin-bottom:1.5rem;">Your data is now processed and ready. You can proceed to select an ML problem and train your model.</p>
+            <div class="next-bar">
+                <a href="/model" class="btn-primary">🎯 Choose ML Problem</a>
+                <a href="/feature_engineering" class="btn-secondary">⚙️ Back to Engineering</a>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">MLReady AI © 2025</footer>
+
+    <script>
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let W, H;
+        function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+        resize();
+        window.addEventListener('resize', resize);
+        function animate() {
+            ctx.clearRect(0, 0, W, H);
+            ctx.fillStyle = 'rgba(160, 80, 255, 0.05)';
+            for(let i=0; i<20; i++) {
+                ctx.beginPath();
+                ctx.arc(Math.random()*W, Math.random()*H, 1, 0, Math.PI*2);
+                ctx.fill();
+            }
+            requestAnimationFrame(animate);
+        }
+        animate();
+    </script>
+</body>
+</html>

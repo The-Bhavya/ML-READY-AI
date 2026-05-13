@@ -213,6 +213,7 @@ def summary():
 
 # ── MODULE 5 — EDA Visualizations ───────────────────────────
 @app.route('/eda')
+@login_required
 def eda():
     """
     Generates and displays:
@@ -229,6 +230,29 @@ def eda():
     plots    = generate_visualizations(df)
     filename = session.get('filename', 'dataset')
     return render_template('eda.html', plots=plots, filename=filename)
+
+
+# ── NEW: Review Updated Data (Summary + EDA) ────────────────
+@app.route('/review_updated')
+@login_required
+def review_updated():
+    """
+    Combines summary and EDA for the cleaned/engineered dataset.
+    This is shown after cleaning or feature engineering steps.
+    """
+    df = get_df()
+    if df is None:
+        flash('Please upload a dataset first.', 'error')
+        return redirect(url_for('upload'))
+
+    summary_data = get_summary(df)
+    plots        = generate_visualizations(df)
+    filename     = session.get('filename', 'dataset')
+
+    return render_template('updated_review.html',
+                           summary=summary_data,
+                           plots=plots,
+                           filename=filename)
 
 
 # ── MODULE 6 — Missing Value Handling ──────────────────────
